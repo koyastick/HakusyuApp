@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { Alert, Platform, StyleSheet, Text, TextInput, View, Image, Button, TouchableOpacity, AppRegistry, FlatList, AsyncStorage, Picker } from 'react-native';
+import { filter } from 'rsvp';
 
 class PopUp extends Component {
   constructor(props) {
@@ -137,7 +138,7 @@ class Post extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      Hakusyu_total: 0,
+      total_h: 0,
       item: this.props.item,
       Hakusyu_log: {
         1: 0,
@@ -145,7 +146,7 @@ class Post extends Component {
       }
     };
   }
-  HakusyuInc = () => { this.setState({ Hakusyu_total: this.state.Hakusyu_total + 1 }) };
+  HakusyuInc = () => { this.setState({ total_h: this.state.total_h + 1 }) };
   render() {
     return (
       // this.props.PostIDで「DBから誰から誰に」「メッセージ」「時間」「拍手数」をもってきたい
@@ -170,17 +171,20 @@ class Post extends Component {
           <View style={{ flexDirection: 'row', justifyContent: "center", alignItems: "center" }}>
             <Button
               onPress={() => {
-                this.HakusyuInc()
-                this.props._onPressHakusyu(this.props.CurrentUser, this.props.item.from, this.props.item.to, this.state.Hakusyu_total)()
+                // this.HakusyuInc()
+                this.props._onPressHakusyu(this.props.CurrentUser, this.props.item.from, this.props.item.to, this.props.item.total_h+1, this.props.item.key)()
               }
               }
               // onPress= {this._}
               title="👏"
               color="black"
               disabled={(this.props.CurrentUser != this.state.item.from && this.props.CurrentUser != this.state.item.to
-                && this.props.info[this.props.CurrentUser].h1 > 0) ? false : true}
+                && this.props.info[this.props.CurrentUser].h1 > 0) && (this.state.item.Hakusyu_log[this.props.CurrentUser]<15) ? false : true}
+              
+              
             />
-            <Text>{this.state.Hakusyu_total}</Text>
+            <Text>{this.props.item.total_h}</Text>
+            
           </View>
           <Text>{this.state.item.date}</Text>
         </View>
@@ -193,26 +197,12 @@ export default class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      CurrentUser: "UID1",
-      TargetUser: "UID2",
+      CurrentUser: "UID0",
+      TargetUser: "UID1",
       SelectCurrentUserMode: -1,
       SelectTargetUserMode: -1,
       Users:require('./src/UserInfo.json'),
       Posts: [
-        {
-          key: '1',
-          date: '2019/6/1 13:13',
-          from: "UID1",
-          to: "UID2",
-          text: "今日の朝猫を助けてあげていましたね",
-          Hakusyu_log: {
-            "UID0": 0,
-            "UID1": 0,
-            "UID2": 0,
-            "UID3": 0,
-            "UID4": 0
-          }
-        },
       ],
       listUpdate: 0,
     };
@@ -251,7 +241,15 @@ export default class App extends Component {
       date: dt.getFullYear().toString() + '/' + (dt.getMonth() + 1).toString() + '/' + dt.getDate().toString() + '/ ' + dt.getHours().toString() + ':' + dt.getMinutes().toString() + ':' + dt.getSeconds().toString(),
       from: _from,
       to: _to,
+      total_h:0,
       text: _text,
+      Hakusyu_log:{
+        "UID0": 0,
+        "UID1": 0,
+        "UID2": 0,
+        "UID3": 0,
+        "UID4": 0        
+      }
     }].concat(this.state.Posts);
     this.setState({
       Posts: list,
@@ -275,7 +273,7 @@ export default class App extends Component {
 
   }
   // 拍手ボタンを押した時の状態の変化
-  _onPressHakusyu = (CurrentUser, _from, _to, totalhakusyu) => () => {
+  _onPressHakusyu = (CurrentUser, _from, _to, _total_h, PostKey) => () => {
     // ユーザ情報の更新
     Users_tmp = this.state.Users;
     Users_tmp[CurrentUser].h1 -= 2
@@ -284,10 +282,18 @@ export default class App extends Component {
     this.setState({ Users: Users_tmp })
     this._storeData("Users", JSON.stringify(this.state.Users))
     // 投稿情報の更新
-    // Posts_tmp = this.state.Posts;
-    // Posts_tmp[PostID][CurrentUser]++;
-    // this.setState({ Users: Users_tmp })
-    // this._storeData("Posts", JSON.stringify(this.state.Posts))
+    A = this.state.Posts.filter(function (item,key){if(item.key==PostKey) return true;});
+    A[0].total_h = _total_h;
+    A[0].Hakusyu_log[CurrentUser]=A[0].Hakusyu_log[CurrentUser]+1;
+    B = this.state.Posts.filter(function (item,key){if(item.key!=PostKey) return true;});
+    Posts_tmp = A.concat(B);
+    Posts_tmp.sort(function(a,b){
+      if(a.key < b.key) return -1;
+      if(a.key > b.key) return 1;
+
+    });
+    this.setState({ Posts: Posts_tmp })
+    this._storeData("Posts", JSON.stringify(this.state.Posts))
   }
   _ModeChangeC = () => () => {
     this.setState({ SelectCurrentUserMode: this.state.SelectCurrentUserMode * (-1) })
