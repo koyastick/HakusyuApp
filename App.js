@@ -329,7 +329,7 @@ export default class App extends Component {
     }
   };
   render() {
-    return (｀
+    return (
       <View style={styles.container} >
         {/* <Text>Current User {this.state.CurrentUser}  |  TargetUser: {this.state.TargetUser} | execData: {this.state.listUpdate} </Text> */}
         <CurrentUserBox info={this.state.Users} CurrentUser={this.state.CurrentUser} _ModeChangeC={this._ModeChangeC} />
