@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component } from './node_modules/react';
 import { Alert, Platform, StyleSheet, Text, TextInput, View, Image, Button, TouchableOpacity, AppRegistry, FlatList, AsyncStorage, Picker } from 'react-native';
 
 export default class CurrentUserBox extends Component {
